@@ -1,21 +1,24 @@
-"""
-Single place responsible for deleting EVERYTHING tied to a tab_id once it closes:
-  - tab_registry row
-  - dom_cache row
-  - screenshot_store row + the actual R2 object
-Called from routes/tab_sync.py's /tab-closed handler. Also exposes a periodic sweep
-(compare tab_registry against a fresh chrome.tabs.query snapshot) as a safety net in case
-a /tab-closed call is ever missed (e.g. browser crash).
+from db.supabase_client import supabase
+import services.tab_registry as tab_registry
 
-Resync policy: deletion on close is immediate and NOT assumed to persist across an
-extension restart. MV3 service workers get killed/restarted by Chrome at will, so on
-every service-worker startup (see tab_registry.resync_all) the registry is treated as
-possibly stale: enumerate chrome.tabs.query() and rebuild tabs/dom_data/screenshots rows
-for every currently open tab from scratch, discarding any leftover rows for tabs no
-longer open. Nothing is assumed to survive a restart.
-"""
+def purge(tab_id: int) -> None:
+  """Delete all data tied to that tab immediately.
+  With SQL cascade constraints in schema.sql, deleting the tab from 'tabs'
+  automatically removes related rows from 'dom_data' and 'screenshots'."""
+  tab_registry.remove(tab_id)
 
 def resync_on_startup(current_tabs: list) -> None:
-    """Rebuild tab_registry (and clear dom_data/screenshots) from a fresh tabs snapshot.
-    Called once when the service worker (re)starts / reconnects to the backend."""
-    pass
+  """Rebuild tab_registry from a fresh tabs snapshot."""
+  tab_registry.resync_all(current_tabs)
+
+def sweep(active_tab_ids: list[int]) -> None:
+  """Compare Supabase rows against the fresh active tab IDs list and delete stale rows."""
+  try:
+    res = supabase.table("tabs").select("tab_id").execute()
+    db_tab_ids = [row["tab_id"] for row in res.data]
+    stale_ids = [tid for tid in db_tab_ids if tid not in active_tab_ids]
+    for stale_id in stale_ids:
+      print(f"Sweeper purging stale tab ID: {stale_id}")
+      purge(stale_id)
+  except Exception as e:
+    print(f"Error in cleanup sweeper: {e}")

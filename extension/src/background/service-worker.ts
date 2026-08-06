@@ -1,6 +1,21 @@
-// Entry point for the background service worker (MV3).
-// Responsibilities:
-//   - Wire up chrome.tabs.onCreated / onRemoved / onUpdated listeners -> tab-manager.ts
-//   - Receive transcripts from content scripts / side panel -> forward to backend-client.ts
-//   - Receive the decision model's command list back from Flask -> hand off to command-dispatcher.ts
-// Deliberately thin: no business logic lives here, only wiring.
+import { dispatch } from './command-dispatcher';
+import { initializeTabListeners, resyncAllTabs, startPeriodicSweep } from './tab-manager';
+
+console.log("Service Worker started.");
+
+// Initialize tab manager features
+initializeTabListeners();
+resyncAllTabs();
+startPeriodicSweep();
+
+chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+  if (message.type === 'execute-commands') {
+    dispatch(message.commands).then((results) => {
+      sendResponse({ success: true, results });
+    }).catch((err) => {
+      sendResponse({ success: false, error: err.message || String(err) });
+    });
+    return true; // Keep response channel open for async response
+  }
+});
+
