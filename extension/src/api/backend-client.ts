@@ -1,3 +1,4 @@
+/// <reference types="chrome" />
 // All fetch() calls to the Flask backend live here — nothing else in the extension talks to the network directly.
 
 const BACKEND_URL = 'http://127.0.0.1:5000';

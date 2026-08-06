@@ -3,6 +3,10 @@ Flask app factory / entrypoint.
 Registers blueprints from routes/, initializes db/supabase_client, applies flask-cors
 (required since requests originate from a chrome-extension:// origin).
 """
+import os
+import sys
+sys.path.append(os.path.dirname(os.path.abspath(__file__)))
+
 from flask import Flask
 from flask_cors import CORS
 
