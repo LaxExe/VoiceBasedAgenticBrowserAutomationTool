@@ -1,0 +1,262 @@
+{
+  "$schema": "voice-extension/chromium-commands/v1",
+  "description": "Catalog of executable browser-control commands the decision model may choose from. Each entry maps 1:1 to a real Chrome extension API call so the backend's command-dispatcher can execute the decision model's output without re-interpreting intent. 'tier' matches the model-tiering table in the architecture doc.",
+
+  "commands": [
+    {
+      "name": "open_tab",
+      "tier": 1,
+      "description": "Open a new tab, optionally navigating straight to a URL.",
+      "chrome_api": "chrome.tabs.create",
+      "params": {
+        "url": { "type": "string", "required": false, "example": "https://claude.ai" },
+        "active": { "type": "boolean", "required": false, "default": true, "note": "set false for Parallel Mode (background open)" },
+        "windowId": { "type": "number", "required": false }
+      },
+      "requires_debugger": false,
+      "requires_vision": false
+    },
+    {
+      "name": "close_tab",
+      "tier": 1,
+      "description": "Close one or more tabs by tabId.",
+      "chrome_api": "chrome.tabs.remove",
+      "params": {
+        "tabIds": { "type": "number | number[]", "required": true }
+      },
+      "requires_debugger": false,
+      "requires_vision": false
+    },
+    {
+      "name": "go_to_url",
+      "tier": 1,
+      "description": "Navigate an existing tab to a specific URL.",
+      "chrome_api": "chrome.tabs.update",
+      "params": {
+        "tabId": { "type": "number", "required": true },
+        "url": { "type": "string", "required": true }
+      },
+      "requires_debugger": false,
+      "requires_vision": false
+    },
+    {
+      "name": "go_to_site",
+      "tier": 2,
+      "description": "Fuzzy-resolve a spoken site/app name (e.g. 'Best Buy', 'the laptop shopping app') against open tabs' titles/URLs first, and only fall back to a fresh navigation/search if no open tab matches. This is the command the small model reaches for when the request names a site rather than a literal URL.",
+      "chrome_api": "chrome.tabs.query + chrome.tabs.update (fallback: chrome.tabs.create with a search/direct URL)",
+      "params": {
+        "siteQuery": { "type": "string", "required": true, "example": "best buy" },
+        "preferExistingTab": { "type": "boolean", "required": false, "default": true }
+      },
+      "requires_debugger": false,
+      "requires_vision": false
+    },
+    {
+      "name": "switch_tab",
+      "tier": 2,
+      "description": "Switch the active tab/window focus to a specific tab (does not navigate).",
+      "chrome_api": "chrome.tabs.update (active: true) + chrome.windows.update (focused: true)",
+      "params": {
+        "tabId": { "type": "number", "required": true }
+      },
+      "requires_debugger": false,
+      "requires_vision": false
+    },
+    {
+      "name": "go_back",
+      "tier": 1,
+      "description": "Navigate a tab back one entry in its history.",
+      "chrome_api": "chrome.tabs.goBack",
+      "chrome_version": "88+ (history-agnostic promise form); 72+ (callback form)",
+      "params": {
+        "tabId": { "type": "number", "required": false, "note": "defaults to active tab of current window" }
+      },
+      "requires_debugger": false,
+      "requires_vision": false
+    },
+    {
+      "name": "go_forward",
+      "tier": 1,
+      "description": "Navigate a tab forward one entry in its history ('fastforward').",
+      "chrome_api": "chrome.tabs.goForward",
+      "chrome_version": "88+ (promise form); 72+ (callback form)",
+      "params": {
+        "tabId": { "type": "number", "required": false }
+      },
+      "requires_debugger": false,
+      "requires_vision": false
+    },
+    {
+      "name": "reload_tab",
+      "tier": 1,
+      "description": "Reload a tab, optionally bypassing cache.",
+      "chrome_api": "chrome.tabs.reload",
+      "params": {
+        "tabId": { "type": "number", "required": false },
+        "bypassCache": { "type": "boolean", "required": false, "default": false }
+      },
+      "requires_debugger": false,
+      "requires_vision": false
+    },
+    {
+      "name": "scroll",
+      "tier": 1,
+      "description": "Scroll the page in a direction or to an element/position.",
+      "chrome_api": "chrome.scripting.executeScript (injects window.scrollBy / scrollIntoView)",
+      "params": {
+        "tabId": { "type": "number", "required": true },
+        "direction": { "type": "string", "enum": ["up", "down", "top", "bottom"], "required": false },
+        "targetSelector": { "type": "string", "required": false, "note": "used for 'find the paragraph about X' style scroll-to" }
+      },
+      "requires_debugger": false,
+      "requires_vision": false
+    },
+    {
+      "name": "set_zoom",
+      "tier": 1,
+      "description": "Change page zoom level.",
+      "chrome_api": "chrome.tabs.setZoom",
+      "params": {
+        "tabId": { "type": "number", "required": true },
+        "zoomFactor": { "type": "number", "required": true, "example": 1.25 }
+      },
+      "requires_debugger": false,
+      "requires_vision": false
+    },
+    {
+      "name": "mute_tab",
+      "tier": 1,
+      "description": "Mute or unmute a tab's audio.",
+      "chrome_api": "chrome.tabs.update (muted: true|false)",
+      "params": {
+        "tabId": { "type": "number", "required": true },
+        "muted": { "type": "boolean", "required": true }
+      },
+      "requires_debugger": false,
+      "requires_vision": false
+    },
+    {
+      "name": "bookmark_tab",
+      "tier": 1,
+      "description": "Bookmark the given tab's URL.",
+      "chrome_api": "chrome.bookmarks.create",
+      "params": {
+        "title": { "type": "string", "required": true },
+        "url": { "type": "string", "required": true },
+        "parentId": { "type": "string", "required": false }
+      },
+      "requires_debugger": false,
+      "requires_vision": false
+    },
+    {
+      "name": "get_history",
+      "tier": 2,
+      "description": "Search recent browsing history, e.g. to re-find a page the user mentions by description.",
+      "chrome_api": "chrome.history.search",
+      "params": {
+        "text": { "type": "string", "required": true },
+        "maxResults": { "type": "number", "required": false, "default": 10 },
+        "startTime": { "type": "number", "required": false }
+      },
+      "requires_debugger": false,
+      "requires_vision": false
+    },
+    {
+      "name": "get_page_text",
+      "tier": 2.5,
+      "description": "Extract visible page text (and interactive element list) for the decision model to reason over, e.g. 'find the paragraph about wildfires on this page'.",
+      "chrome_api": "chrome.scripting.executeScript (reads document.body.innerText + queries interactive elements)",
+      "params": {
+        "tabId": { "type": "number", "required": true }
+      },
+      "requires_debugger": false,
+      "requires_vision": false
+    },
+    {
+      "name": "capture_screenshot",
+      "tier": 3,
+      "description": "Capture the visible area of a tab. Only called after the cheap model calls escalate_to_vision and text/DOM alone isn't enough.",
+      "chrome_api": "chrome.tabs.captureVisibleTab",
+      "rate_limit": "MAX_CAPTURE_VISIBLE_TAB_CALLS_PER_SECOND (Chrome-enforced)",
+      "params": {
+        "windowId": { "type": "number", "required": false },
+        "format": { "type": "string", "enum": ["jpeg", "png"], "required": false, "default": "jpeg" }
+      },
+      "requires_debugger": false,
+      "requires_vision": true
+    },
+    {
+      "name": "click_at_coordinates",
+      "tier": 3,
+      "description": "Click a precise (x, y) point on the page — used for multi-step UI tasks on unfamiliar layouts, since it's more reliable than synthetic DOM click events.",
+      "chrome_api": "chrome.debugger.sendCommand: Input.dispatchMouseEvent (type: mousePressed, then mouseReleased)",
+      "cdp_domain": "Input",
+      "manifest_permission": "debugger",
+      "params": {
+        "tabId": { "type": "number", "required": true },
+        "x": { "type": "number", "required": true },
+        "y": { "type": "number", "required": true }
+      },
+      "requires_debugger": true,
+      "requires_vision": true
+    },
+    {
+      "name": "type_text",
+      "tier": 3,
+      "description": "Type text into whatever element currently has focus (e.g. after clicking a chat input) — used for multi-step tasks like 'ask it for the 20 best places to visit'.",
+      "chrome_api": "chrome.debugger.sendCommand: Input.insertText (or Input.dispatchKeyEvent per character for sites that reject insertText)",
+      "cdp_domain": "Input",
+      "manifest_permission": "debugger",
+      "params": {
+        "tabId": { "type": "number", "required": true },
+        "text": { "type": "string", "required": true }
+      },
+      "requires_debugger": true,
+      "requires_vision": false
+    },
+    {
+      "name": "press_key",
+      "tier": 3,
+      "description": "Dispatch a single key press (e.g. Enter to submit a form/chat message).",
+      "chrome_api": "chrome.debugger.sendCommand: Input.dispatchKeyEvent (rawKeyDown then char/keyUp)",
+      "cdp_domain": "Input",
+      "manifest_permission": "debugger",
+      "params": {
+        "tabId": { "type": "number", "required": true },
+        "key": { "type": "string", "required": true, "example": "Enter" }
+      },
+      "requires_debugger": true,
+      "requires_vision": false
+    },
+    {
+      "name": "escalate_to_vision",
+      "tier": "meta",
+      "description": "Not a browser action — the cheap model's explicit escape hatch when text/DOM data isn't enough to complete the request. Triggers capture_screenshot + a call to the vision-capable decision model rather than executing anything directly.",
+      "chrome_api": null,
+      "params": {
+        "tabId": { "type": "number", "required": true },
+        "reason": { "type": "string", "required": true }
+      },
+      "requires_debugger": false,
+      "requires_vision": false
+    },
+    {
+      "name": "group_tabs",
+      "tier": 2,
+      "description": "Group related tabs together (optional UI polish, e.g. grouping all tabs opened by one multi-step task).",
+      "chrome_api": "chrome.tabs.group + chrome.tabGroups.update",
+      "params": {
+        "tabIds": { "type": "number[]", "required": true },
+        "title": { "type": "string", "required": false }
+      },
+      "requires_debugger": false,
+      "requires_vision": false
+    }
+  ],
+
+  "notes": {
+    "manifest_permissions_needed": ["tabs", "scripting", "debugger", "history", "bookmarks", "activeTab"],
+    "debugger_caveat": "Attaching chrome.debugger shows Chrome's yellow 'is being debugged' infobar — surface this in the side-panel log so it isn't mistaken for a bug. Only the domains Accessibility, Audits, CacheStorage, Console, CSS, Database, Debugger, DOM, DOMDebugger, DOMSnapshot, Emulation, Fetch, IO, Input, Inspector, Log, Network, Overlay, Page, Performance, Profiler, Runtime, Storage, Target, Tracing, WebAudio, WebAuthn are exposed through chrome.debugger.",
+    "deprecated_avoid": ["chrome.tabs.executeScript (use chrome.scripting.executeScript)", "chrome.tabs.getSelected", "chrome.tabs.sendRequest"]
+  }
+}

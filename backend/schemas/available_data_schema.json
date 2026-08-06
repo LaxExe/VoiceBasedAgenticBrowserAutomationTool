@@ -1,0 +1,54 @@
+{
+  "$schema": "voice-extension/available-data/v1",
+  "description": "Defines the 'headers' the small/nano model checks off when it clusters a request into a task. The small model's job is ONLY to select which of these sections are relevant (e.g. request needs 'tabs' + 'dom_data' but not 'screenshots'); it never reads the full payload under a header. The decision model then receives the full contents of only the sections that got checked.",
+
+  "headers": [
+    {
+      "key": "tabs",
+      "label": "List of all tabs",
+      "description": "Lightweight per-tab metadata for every open tab, refreshed on tab open/close/update.",
+      "record_shape": {
+        "tabId": "number",
+        "windowId": "number",
+        "title": "string",
+        "url": "string",
+        "active": "boolean",
+        "audible": "boolean",
+        "lastAccessed": "timestamp"
+      }
+    },
+    {
+      "key": "dom_data",
+      "label": "Filtered DOM data for existing tabs",
+      "description": "Extracted page text + interactive element list per tab. Populated lazily (on first request that needs it) and refreshed on navigation, not on every tick.",
+      "record_shape": {
+        "tabId": "number",
+        "innerText": "string (truncated/chunked)",
+        "interactiveElements": [
+          { "selector": "string", "role": "string", "label": "string" }
+        ],
+        "extractedAt": "timestamp"
+      }
+    },
+    {
+      "key": "screenshots",
+      "label": "Screenshots when needed for agentic workflows",
+      "description": "Only populated when a command explicitly escalates to vision (tier 3). Not kept in sync automatically — stale by design until re-requested.",
+      "record_shape": {
+        "tabId": "number",
+        "imageUrl": "string (Cloudflare bucket URL)",
+        "capturedAt": "timestamp"
+      }
+    }
+  ],
+
+  "small_model_output_contract": {
+    "note": "Strict JSON only — this is what the small model returns, and it is the ONLY thing that decides which headers' data gets pulled before the decision model call.",
+    "shape": {
+      "selected_headers": ["tabs", "dom_data"],
+      "candidate_command_names": ["go_to_site", "switch_tab"],
+      "target_tab_hint": "string | null"
+    },
+    "low_confidence_fallback": "If the small model isn't confident enough to pick a header or command, it returns selected_headers: [] instead of guessing. An empty array means: skip data retrieval entirely and forward the raw transcript straight to the decision model with pulled_data = {} — the decision model must plan from the transcript + command catalog alone in that case. Data retrieval never happens except when a header is explicitly selected here."
+  }
+}

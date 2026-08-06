@@ -1,0 +1,15 @@
+{
+  "manifest_version": 3,
+  "name": "Voice Browser Control",
+  "version": "0.1.0",
+  "description": "Control your browser hands-free by voice.",
+  "permissions": ["tabs", "scripting", "debugger", "history", "bookmarks", "activeTab", "storage", "sidePanel"],
+  "host_permissions": ["<all_urls>"],
+  "background": { "service_worker": "src/background/service-worker.js", "type": "module" },
+  "content_scripts": [
+    { "matches": ["<all_urls>"], "js": ["src/content/content-script.js"], "run_at": "document_idle" }
+  ],
+  "side_panel": { "default_path": "src/ui/side-panel/index.html" },
+  "action": { "default_popup": "src/ui/popup/index.html" },
+  "icons": { "16": "public/icons/16.png", "48": "public/icons/48.png", "128": "public/icons/128.png" }
+}
