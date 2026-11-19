@@ -2,22 +2,24 @@
 
 Voice Browser Control is a Manifest V3 Chrome extension that lets you drive your browser by voice. Hold a key, say what you want, and an LLM planner picks the **cheapest reliable way** to do it. Simple commands never touch a vision model. A **Parallel Mode** lets background actions run without pulling focus from your current tab.
 
+**Website:** [lakshman-codes.github.io](https://lakshman-codes.github.io) | **Author:** [Lakshman on GitHub](https://github.com/LaxExe)
+
 ---
 
 ## Key Features
 
-- 🎙️ **Push-to-Talk Voice Control**: Hold **Ctrl** to record with the Web Speech API, with optional spoken replies through speech synthesis.
-- 🧠 **Two-Stage Model Routing**: A small model classifies the request and picks only the data it needs. A decision model then plans the commands. No hardcoded regex rules.
-- 💸 **Tiered Execution**: Cheap Chrome API calls come first (tier 1), then DOM text and elements, with screenshot-based vision only as a last resort (`escalate_to_vision`).
-- 🪟 **Parallel Mode**: Open and act on background tabs without stealing focus.
-- 🗂️ **19-Command Catalog**: Open, close, switch, group and bookmark tabs, navigate, scroll, zoom, mute, read page text, click, type, press keys, and more. See [`chromium_commands.json`](backend/schemas/chromium_commands.json).
-- 🔄 **Self-Healing Tab State**: Exactly one row per open tab, cleaned up on close, with a periodic sweep and a full resync whenever Chrome restarts the service worker.
-- 🧩 **Lazy Data Retrieval**: Page text, interactive elements and screenshots are fetched only when the small model asks for them.
-- 🪂 **Low-Confidence Fallback**: If nothing is selected, the decision model plans from the transcript and command catalog alone.
+- **Push-to-Talk Voice Control**: Hold **Ctrl** to record with the Web Speech API, with optional spoken replies through speech synthesis.
+- **Two-Stage Model Routing**: A small model classifies the request and picks only the data it needs. A decision model then plans the commands. No hardcoded regex rules.
+- **Tiered Execution**: Cheap Chrome API calls come first (tier 1), then DOM text and elements, with screenshot-based vision only as a last resort (`escalate_to_vision`).
+- **Parallel Mode**: Open and act on background tabs without stealing focus.
+- **19-Command Catalog**: Open, close, switch, group and bookmark tabs, navigate, scroll, zoom, mute, read page text, click, type, press keys, and more. See [`chromium_commands.json`](backend/schemas/chromium_commands.json).
+- **Self-Healing Tab State**: Exactly one row per open tab, cleaned up on close, with a periodic sweep and a full resync whenever Chrome restarts the service worker.
+- **Lazy Data Retrieval**: Page text, interactive elements and screenshots are fetched only when the small model asks for them.
+- **Low-Confidence Fallback**: If nothing is selected, the decision model plans from the transcript and command catalog alone.
 
 ---
 
-## 🧭 How It Works
+## How It Works
 
 ```
 Hold Ctrl → Web Speech API → transcript
@@ -42,7 +44,7 @@ Deeper notes are in [`docs/architecture.md`](docs/architecture.md).
 
 ---
 
-## 🛠️ Tech Stack
+## Tech Stack
 
 | Layer | Technology |
 |---|---|
@@ -54,7 +56,7 @@ Deeper notes are in [`docs/architecture.md`](docs/architecture.md).
 
 ---
 
-## 🚀 How to Build & Run
+## How to Build & Run
 
 ### Prerequisites
 - **Google Chrome** (or another Chromium browser)
@@ -101,7 +103,7 @@ npm run build        # or: npm run dev  (watch mode)
 
 ---
 
-## 🧪 Running Tests
+## Running Tests
 
 ```bash
 cd backend
@@ -110,7 +112,7 @@ python -m pytest tests
 
 ---
 
-## 🔌 Backend API
+## Backend API
 
 | Route | Description |
 |---|---|
@@ -123,7 +125,7 @@ python -m pytest tests
 
 ---
 
-## 🏗️ Architecture
+## Architecture
 
 ```
 VoiceBasedAgenticBrowserAutomationTool/
@@ -149,3 +151,9 @@ VoiceBasedAgenticBrowserAutomationTool/
         ├── api/               # backend-client
         └── ui/                # popup, side-panel
 ```
+
+---
+
+## About the Author
+
+Built by Lakshman, a first-year Computer Engineering student at the University of Waterloo looking to build more experience. See more of my work at [lakshman-codes.github.io](https://lakshman-codes.github.io).
